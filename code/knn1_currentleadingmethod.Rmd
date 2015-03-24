@@ -1,0 +1,204 @@
+---
+title: "Untitled"
+author: "Samantha Dalton"
+date: "Thursday, March 12, 2015"
+output: html_document
+---
+
+Data analysis
+```{r, echo=FALSE}
+library("class")
+library("dplyr")
+library("plyr")
+setwd("C:\\Users\\Samantha\\Documents\\GitHub\\Machine-LearningDLZ")
+training<-read.csv("data/Kaggle_Covertype_training.csv", header=T)
+test<-read.csv("data/Kaggle_Covertype_test.csv", header=T)
+```
+
+```{r}
+#Try testing KNN leaving out soil type 18, 19, (20), 21, 25, (26), 27, 28, 34, (35), 37
+#No rescaling
+
+noObs<-nrow(training)
+noBuckets <- 10
+idx <- rep(1:noBuckets, each=ceiling(nrow(training)/noBuckets)) 
+idx <- idx[sample(1:noObs)]
+
+
+training <- training %>% mutate(bucket=idx) 
+training<- training %>% select( -soil_type_15, - soil_type_18, -soil_type_19, -soil_type_20, -soil_type_21, -soil_type_25, -soil_type_26, -soil_type_27, -soil_type_28, -soil_type_34, -soil_type_35, -soil_type_37)
+
+ks <- c(1,3, 5, 7,9)
+
+results<-data.frame(1,1,1)
+testError<-data.frame(1,1)
+
+for (cv in 1:10) {
+  
+  Xtrain <- training  %>% filter(bucket != cv) %>% select(-Cover_Type, -id, -bucket)
+  
+  
+  Ytrain <- training %>% filter(bucket != cv) %>% select(Cover_Type)
+  
+  # subsetting the test phase data
+  Xtest <- training %>% filter(bucket == cv) %>% select( -Cover_Type, -id, -bucket)
+  
+  Ytest <- training %>% filter(bucket == cv) %>% select( Cover_Type)
+  
+    for (k in 1:length(ks)) {
+
+  
+  # kNN results
+  info<-paste(as.character(cv),as.character(k))
+  testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
+  totalError <-  mean(testPredictions != Ytest$Cover_Type)
+  tp<- data.frame(testPredictions,Ytest$Cover_Type)
+  groupError<-data.frame(ddply(tp,~round(Ytest.Cover_Type),summarise,mean=mean(testPredictions != Ytest.Cover_Type)))
+  groupError<-rbind(c(cv,k),groupError)
+  results<-rbind(results,c(k=k,bucket=cv,error=totalError))
+  testError<-cbind(testError, groupError)
+  
+  }
+
+}
+
+results
+testError
+```
+
+#Create file for submission of 1KNN with no scaling
+```{r}
+training<-read.csv("data/Kaggle_Covertype_training.csv", header=T)
+
+training<- training %>% select( -soil_type_15, -soil_type_18, -soil_type_19, -soil_type_20, -soil_type_21, -soil_type_25, -soil_type_26, -soil_type_27, -soil_type_28, -soil_type_34, -soil_type_35, -soil_type_37)
+
+test<-test %>% select( -soil_type_15, -soil_type_18, -soil_type_19, -soil_type_20, -soil_type_21, -soil_type_25, -soil_type_26, -soil_type_27, -soil_type_28, -soil_type_34, -soil_type_35, -soil_type_37)
+
+
+
+
+  Xtrain <- training  %>%  select(-Cover_Type, -id)
+  
+  
+  Ytrain <- training %>%  select(Cover_Type)
+  
+  # subsetting the test phase data
+  Xtest <- test  %>%  select(-id)
+
+Predictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=1)
+
+Predictions<- data.frame(id=test$id,Cover_Type=Predictions$Predictions) 
+
+write.csv(Predictions, file="data/knn_predictions.csv", row.names = FALSE)
+getwd()
+
+```
+
+```{r}
+#Try testing KNN leaving out soil type 18, 19, (20), 21, 25, (26), 27, 28, 34, (35), 37
+#Rescale continuous variables
+
+
+training2 <- training %>% select(elevation, aspect,slope, hor_dist_hyd, ver_dist_hyd, hor_dist_road,hill_9am, hor_dist_road, hill_9am, hill_noon, hill_3pm, hor_dist_fire)
+
+training3<-data.frame(scale(training2, center=TRUE, scale=TRUE))
+
+training4<- training %>% select(-c(elevation, aspect,slope, hor_dist_hyd, ver_dist_hyd, hor_dist_road,hill_9am, hor_dist_road, hill_9am, hill_noon, hill_3pm, hor_dist_fire)) 
+
+training<- data.frame(training4,training3)
+
+
+ks <- c(1,3, 5, 7,9)
+
+results_scaled<-data.frame(1,1,1)
+testError_scaled<-data.frame(1,1)
+
+
+for (cv in 1:10) {
+  
+  Xtrain <- training  %>% filter(bucket != cv) %>% select(-Cover_Type, -id, -bucket)
+  
+  
+  Ytrain <- training %>% filter(bucket != cv) %>% select(Cover_Type)
+  
+  # subsetting the test phase data
+  Xtest <- training %>% filter(bucket == cv) %>% select( -Cover_Type, -id, -bucket)
+  
+  Ytest <- training %>% filter(bucket == cv) %>% select( Cover_Type)
+  
+    for (k in 1:length(ks)) {
+
+  
+  # kNN results
+  info<-paste(as.character(cv),as.character(k))
+  testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
+  totalError <-  mean(testPredictions != Ytest$Cover_Type)
+  tp<- data.frame(testPredictions,Ytest$Cover_Type)
+  groupError<-data.frame(ddply(tp,~Ytest.Cover_Type,summarise,mean=mean(testPredictions != Ytest.Cover_Type)))
+  groupError<-rbind(c(cv,k),groupError)
+  results_scaled<-rbind(results_scaled,c(k=k,bucket=cv,totalError))
+  testError_scaled<-cbind(testError_scaled, groupError)
+  
+  }
+
+}
+
+
+#SCALED CONTINUOUS VARIABLES
+results_scaled
+testError_scaled
+```
+
+
+```{r}
+#Try testing KNN leaving out soil type 18, 19, (20), 21, 25, (26), 27, 28, 34, (35), 37
+#Rescale continuous variables from 0 to 1
+
+
+
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+
+
+training5<- apply(training3,2,range01)
+training<- data.frame(training4,training5)
+
+ks <- c(1,3, 5, 7,9)
+
+results_scaled01<-data.frame(1,1,1)
+testError_scaled01<-data.frame(1,1)
+
+
+for (cv in 1:10) {
+  
+  Xtrain <- training  %>% filter(bucket != cv) %>% select(-Cover_Type, -id, -bucket)
+  
+  
+  Ytrain <- training %>% filter(bucket != cv) %>% select(Cover_Type)
+  
+  # subsetting the test phase data
+  Xtest <- training %>% filter(bucket == cv) %>% select( -Cover_Type, -id, -bucket)
+  
+  Ytest <- training %>% filter(bucket == cv) %>% select( Cover_Type)
+  
+    for (k in 1:length(ks)) {
+
+  
+  # kNN results
+  info<-paste(as.character(cv),as.character(k))
+  testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
+  totalError <-  mean(testPredictions != Ytest$Cover_Type)
+  tp<- data.frame(testPredictions,Ytest$Cover_Type)
+  groupError<-data.frame(ddply(tp,~Ytest.Cover_Type,summarise,mean=mean(testPredictions != Ytest.Cover_Type)))
+  groupError<-rbind(c(cv,k),groupError)
+  results_scaled01<-rbind(results_scaled,c(k=k,bucket=cv,totalError))
+  testError_scaled01<-cbind(testError_scaled, groupError)
+  
+  }
+
+}
+
+
+#SCALED CONTINUOUS VARIABLES
+results_scaled01
+testError_scaled01
+```

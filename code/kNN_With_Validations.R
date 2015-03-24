@@ -193,7 +193,7 @@ SampleClass <- trainData[,1] #Train data class
 
 ####Calculate the distances once for all methods
 
-k <- seq(1,31,1) #k-NN to be computed
+k <- seq(1,23,1) #k-NN to be computed
 p <- 2 # Manhattan (1), Euclidean (2) or Chebyshev (Inf)
 
 #Obtain the index of all nearest neighbours for the training data
