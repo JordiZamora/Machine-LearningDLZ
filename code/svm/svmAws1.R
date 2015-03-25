@@ -14,11 +14,12 @@ D <- ncol(dataFull)
 leaveOut <- 0.8 # for cross validation - # 10% leave out - for cross-validation
 train <- dataFull[1:(n*(1-leaveOut)), 2:D] # training data
 nn <- nrow(train)
-test <- dataFull[(nn+1):(nn+400), 3:D-1]
+testSize <- 1000
+test <- dataFull[(nn+1):(nn+testSize), 3:D-1]
 testNsc <- test
 trainNsc <- train # to preserve the non-scaled variables - works a lot better 
 # with SVMS
-trueClass <- as.numeric(dataFull[(nn+1):(nn+400), D])
+trueClass <- as.numeric(dataFull[(nn+1):(nn+testSize), D])
 
 dims <- dim(train)
 dims2 <- dim(test)
@@ -74,20 +75,18 @@ modelAll1_1 <- ksvm(x=as.matrix(train[, 1:ncol(train)-1]),
 modelAll1_2 <- ksvm(x=as.matrix(train[, 1:ncol(train)-1]), 
                     y=as.factor(train[, ncol(train)]),
                     C=1000, cross=10)
-pred <- predict(modelAll1_2, test)
-err <- crossVal(as.numeric(pred), trueClass)
-
+# increasing C works for insample fit improvement
 modelAll1 <- ksvm(x=as.matrix(train[, 1:ncol(train)-1]), 
                   y=as.factor(train[, ncol(train)]),
                   C=1, kernel="polydot")
-## now trying to 
+## now trying to predict
+pred <-predict(modelAll1_2, test)
+err <- crossVal(as.numeric(pred), trueClass)
 
-
-
-
+# now write the combinational model
 
 d <- ncol(train)
-# now write the combinational model
+
 model1 <- ksvm(x=as.matrix(train[, 1:(d-1)]), y=as.matrix(yMat[, 1]), C=1) 
 model2 <- ksvm(x=as.matrix(train[, 1:(d-1)]), y=as.matrix(yMat[, 2]), C=1) 
 model3 <- ksvm(x=as.matrix(train[, 1:(d-1)]), y=as.matrix(yMat[, 3]), C=1)
