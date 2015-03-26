@@ -99,6 +99,30 @@ t1 <- tuneRF(features,labels,mtryStart=10, ntreeTry=50, stepFactor=1.2, improve=
 # mtry = 14 	OOB error = 11.9% 
 # -0.003202967 0.01 
 
+
+features <- out$scores[,1:51]
+t1 <- tuneRF(features,labels,mtryStart=6, ntreeTry=50, stepFactor=1.2, improve=0.01)
+# mtry = 6  OOB error = 12.91% 
+# Searching left ...
+# mtry = 5   OOB error = 12.95% 
+# -0.003099334 0.01 
+# Searching right ...
+# mtry = 7 	OOB error = 12.64% 
+# 0.0204556 0.01 
+# mtry = 8 	OOB error = 12.35% 
+# 0.02325581 0.01 
+# mtry = 9 	OOB error = 12.55% 
+# -0.01652089 0.01 
+
+t2 <- tuneRF(features,labels,mtryStart=30, ntreeTry=50, stepFactor=1.2, improve=0.01)
+# mtry = 30  OOB error = 11.88% 
+# Searching left ...
+# mtry = 25   OOB error = 12.09% 
+# -0.01801954 0.01 
+# Searching right ...
+# mtry = 36 	OOB error = 12.16% 
+# -0.02391378 0.01 
+
 MError <- c()
 
 for (j in 1:11){
