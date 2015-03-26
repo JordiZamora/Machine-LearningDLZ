@@ -1,0 +1,212 @@
+---
+title: 'Machine Learning: Kaggle competition on Prediction of a forest covertype'
+author: "Samantha Dalton, Yevgen Levin, and Jordi Zamora Munt"
+date: "26/03/2015"
+output: pdf_document
+---
+
+**Goal**
+
+Use a training data set of 53 features and 50000 observations to predict from a testing set of 100000 observations 7 different forest covertypes. Using the Kaggle competition platform we will evaluate the performance of the method by measuring the accuracy on the testing set.
+
+Previous works have reached up to 3\% of error rate with the whole data set that contains more than 500k examples by using random forests (*http://www.wise.io/blog/benchmarking-random-forest-part-1*).
+
+**Introduction of the data**
+
+The data provided is divided in a training set and a testing set. The training set contains 50000 examples with 53 features plus the corresponding id's and covertypes. The structure of the features is as follows:
+
+- Name / Data Type / Measurement / Description
+\begin{itemize}
+\item id
+\item Elevation / quantitative /meters / Elevation in meters
+\item Aspect / quantitative / azimuth / Aspect in degrees azimuth
+\item Slope / quantitative / degrees / Slope in degrees
+\item Horizontal-Distance-To-Hydrology / quantitative / meters / Horz Dist to nearest surface water features
+\item Vertical-Distance-To-Hydrology / quantitative / meters / Vert Dist to nearest surface water features
+\item Horizontal-Distance-To-Roadways / quantitative / meters / Horz Dist to nearest roadway
+\item Hillshade-9am / quantitative / 0 to 255 index / Hillshade index at 9am, summer solstice
+\item Hillshade-Noon / quantitative / 0 to 255 index / Hillshade index at noon, summer soltice
+\item Hillshade-3pm / quantitative / 0 to 255 index / Hillshade index at 3pm, summer solstice
+\item Horizontal-Distance-To-Fire-Points / quantitative / meters / Horz Dist to nearest wildfire ignition points
+\item Wilderness-Area (4 binary columns) / qualitative / 0 (absence) or 1 (presence) / Wilderness area designation
+\item Soil-Type (40 binary columns) / qualitative / 0 (absence) or 1 (presence) / Soil Type designation
+\item Cover-Type (7 types) / integer / 1 to 7 / Forest Cover Type designation
+\end{itemize}
+
+The testing data contains the same features except for the Cover-Type that is missed and it is what we want to predict.
+
+**Visual exploration of the training data**
+
+The first check is to know how many examples we have of each covertype
+
+```{r, echo=FALSE, message=FALSE}
+source('multiplot.R')
+library(ggplot2)
+
+#Load data
+rawdata <- read.csv("../data/Kaggle_Covertype_training.csv")
+numcol <- ncol(rawdata)
+rawdata[,numcol] <- factor(rawdata[,numcol]) #Classes as factors
+
+table (rawdata[,numcol])
+```
+
+It indicates that covertypes 1 and 2 are much more represented than the rest. Covertypes 4 and 5 are poorly represented in the training set which can lead to difficulties when we will try to train the model on them.
+
+A good habit is to visualize the data in the proper way. To do this we report the density plots of the continuous variables colored by covertype.
+
+```{r, echo=FALSE, fig.height=20, fig.width=15, message=FALSE}
+### Plot the density distribution of the continuous variables 
+plotList <- list()
+
+plotList[[1]] <- ggplot(data=rawdata,aes(x=elevation,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[2])+
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+plotList[[2]] <- ggplot(data=rawdata,aes(x=aspect,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[3])+
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="top")
+plotList[[3]] <- ggplot(data=rawdata,aes(x=slope,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[4]) +
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+plotList[[4]] <- ggplot(data=rawdata,aes(x=hor_dist_hyd,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[5]) +
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+plotList[[5]] <- ggplot(data=rawdata,aes(x=ver_dist_hyd,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[6]) +
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+plotList[[6]] <- ggplot(data=rawdata,aes(x=hor_dist_road,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[7]) +
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+plotList[[7]] <- ggplot(data=rawdata,aes(x=hill_9am,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[8]) +
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+plotList[[8]] <- ggplot(data=rawdata,aes(x=hill_noon,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[9]) +
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+plotList[[9]] <- ggplot(data=rawdata,aes(x=hill_3pm,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[10]) +
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+plotList[[10]] <- ggplot(data=rawdata,aes(x=hor_dist_fire,fill=Cover_Type,col=Cover_Type)) + 
+  geom_density(alpha = 0.2) +
+  xlab(names(rawdata)[11]) +
+  theme_bw() + 
+  theme(axis.line = element_line(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        text = element_text(size=14),
+        legend.position="none")
+
+layout <- matrix(c(seq(1,10)), nrow = 5, byrow = TRUE)
+myPlotList <- plotList
+multiplot(plotlist = myPlotList, layout = layout)
+```
+
+The more significant feature is the elevation and in second term the aspect. The rest of the features show a strong overlaping of the covertypes.
+
+For the categorical data we show a table that summarizes the 4 wild areas and the 40 soil types
+
+```{r, echo=FALSE}
+categorical <- rawdata[,12:55]
+summaryCategorical <- data.frame(Perc=round(colMeans(categorical),3), counts=round(colSums(categorical),3))
+wilds <- apply(categorical[,1:4],2,function(x) x*as.numeric(rawdata[,56]))
+wilds2 <- apply(wilds,2, function(x) table(x))
+
+soils <- apply(categorical[,5:ncol(categorical)],2,function(x) x*as.numeric(rawdata[,56]))
+soils2 <- apply(soils,2, function(x) table(x))
+
+
+summaryCategorical <- cbind(summaryCategorical,
+                            Cov_1=0,
+                            Cov_2=0,
+                            Cov_3=0,
+                            Cov_4=0,
+                            Cov_5=0,
+                            Cov_6=0,
+                            Cov_7=0)
+
+for (j in 1:length(wilds2)){
+  name <- names(wilds2[[j]])[-1]
+  for (i in name){
+    ii <- as.numeric(i)
+    jj <- which(name==i)+1
+    summaryCategorical[j,(2+ii)] <- wilds2[[j]][jj]
+  }
+}
+
+
+for (j in 1:length(soils2)){
+  name <- names(soils2[[j]])[-1]
+  for (i in name){
+    ii <- as.numeric(i)
+    jj <- which(name==i)+1
+    summaryCategorical[(length(wilds2)+j),(2+ii)] <- soils2[[j]][jj]
+  }
+}
+
+#Output the statistics of categorical data
+summaryCategorical
+```
+
+The first thing we notice is that there are not examples of soiltype 15. It means this fetures has no predictive power and we will remove it from the feature list. A second important observation is that examples of covers 1 and 2 are both descrived by similar counts of soils and wild areas. Finally, soiltypes 7 and 37 only contain covers of type 2 and 7 respectively which can be an unique identifier of this soils.
+
+**Proposed methods**
+
+We will focuse our classification efforts in three methods: Random Forest, Nearest Neighbours, and multiclass Support vector machine.
+
+Random Forest is a popular technique that relise in random subsets of the features and random subsamples of the data to partition the features space with axis parallel cuts (trees). It generates a set of partitions each of which is limited during the division process and is labeled by majority vote among the data points that are in that partition.
+
+Initially our intuition for using SVM was to see if we can identify any one class easily by running the original binary classification problem for each class against the others. Subsequently, when these results turned out poorly, and in the process of exploring the various SVM models and packages in R, we came across specifications that are adaptable to multi-class problems.
