@@ -112,5 +112,6 @@ aPrioryUpdate <- function(Testdata, submit){
   zeros <- c(4) #Not observed covertypes
   mfct <- 2 #most frequent covertype
   submitCorrected[submit[,"id"] %in% ids,] <- corrector(submit[submit[,"id"] %in% ids,],zeros,mfct)
+
   return (submitCorrected)
 }
