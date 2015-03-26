@@ -1,11 +1,33 @@
-library(class)#install.packages("class")
+
+---
+title: "Untitled"
+author: "Samantha Dalton"
+date: "Saturday, March 21, 2015"
+output: html_document
+---
+
+```{r}
+
+library("class")
+install.packages("dplyr")
+library("dplyr")
+
+setwd("C:\\Users\\Samantha\\Documents\\GitHub\\Machine-LearningDLZ")
+training<-read.csv("data/Kaggle_Covertype_training.csv", header=T)
+test<-read.csv("data/Kaggle_Covertype_test.csv", header=T)
+
+
+
+table(test$soil_type_37)
+table(test$soil_type_7)
 
 #Load data
-rawdata <- read.csv("../data/Kaggle_Covertype_training.csv")
+rawdata <- training
 numcol <- ncol(rawdata)
 numrow <- nrow(rawdata)
 rawdata[,numcol] <- factor(rawdata[,numcol]) #Classes as factors
 
+#remover soiltype15, covertype and id before SVD
 aux <- rawdata[,-c(1,30,numcol)]
 #aux[,1:11] <- scale(aux[,1:11])
 # aux <- scale(aux)
@@ -16,9 +38,12 @@ aux <- rawdata[,-c(1,30,numcol)]
 # PCAFrame <- as.data.frame(cbind(out$scores, Cov_Type=rawdata[,numcol]))
 # PCAFrame[,ncol(PCAFrame)] <- factor(PCAFrame[,ncol(PCAFrame)])
 
+names(aux)
 depthv <- c()
-MisclassErr <-  c()
+MisclassErr <-c()
 out<-svd(aux[,1:ncol(aux)])
+
+
 for (i in 2:40){
 depth <- i
 depthv[i] <- depth
@@ -39,19 +64,16 @@ idx <- idx[sample(1:noObs)]
 
 training <- data.frame(training,bucket=idx) 
 head(training)
-ks <- 1
+
 
 results<-data.frame(1,1,1)
 testError<-data.frame(1,1)
 
-cv<-1
-k<-1
 
+for (cv in 1:10) {
 names(training)
 traincol <- ncol(training)
 Xtrain <- training[training$bucket != cv, -c(traincol-1, traincol)]
-head(Xtrain)
-dim(Xtrain)
 
 Ytrain <- training[training$bucket != cv,  (traincol-1)]
 
@@ -60,23 +82,90 @@ Xtest <- training[training$bucket == cv, -c(traincol-1, traincol)]
 
 Ytest <- training[training$bucket == cv,  (traincol-1)]
 
-
+table(rawdata$Cover_Type,rawdata$soil_type_37)
+      names(rawdata)
 
 # kNN results
-info<-paste(as.character(cv),as.character(k))
-testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain, k=3)
-MisclassErr[i] <- mean (testPredictions != Ytest)
+testPredictions1 <- knn(train=Xtrain, test=Xtest, cl=Ytrain, k=1)
+MisclassErr <- rbind(MisclassErr,c(depth, cv, mean(testPredictions != Ytest)))
 }
-#1knn
-#Misclass=
-# [1]     NA 0.5320 0.2604 0.1584 0.1162 0.1064 0.0988 0.1022 0.0978 0.1078 0.1030 0.1110 0.0970 0.1018 0.1066 0.0962 0.1010 0.0952 0.1094
-# [20] 0.1012 0.1050 0.1038 0.0994 0.1090 0.0996 0.1010 0.0982 0.1038 0.1014 0.1048 0.1068 0.0992 0.1008 0.1038 0.1094 0.0934 0.0956 0.1026
-# [39] 0.1012 0.1072
+}
 
-#3knn
-#Misclass=
-# [1]     NA 0.4878 0.2496 0.1734 0.1458 0.1360 0.1224 0.1162 0.1220 0.1178 0.1232 0.1236 0.1240 0.1156 0.1178 0.1188 0.1116 0.1202 0.1292
-# [20] 0.1202 0.1210 0.1180 0.1216 0.1270 0.1188 0.1262 0.1178 0.1188 0.1212 0.1204 0.1206 0.1278 0.1236 0.1212 0.1224 0.1226 0.1220 0.1146
-# [39] 0.1178 0.1184
+error<- data.frame(MisclassErr)
+names(error)
+aggregate(error, by=list(error$X1), FUN=mean)
 
-plot(depthv, MisclassErr)
+write.csv(x = MisclassErr, file = "data/knn_svd_errors.csv", row.names = F)
+
+matrix(MisclassErr,39,10, byrow=TRUE)
+
+class(MisclassErr)
+
+plots<-qplot(x=depth, y=cv, data=error, colour=cv) + geom_line()
+
+jpeg(filename = 'plots/kErrorFeature.jpg', units = "in", width = 5, height = 5, res = 400)
+plot1
+dev.off()
+
+svd_errors<-read.csv("data/knn_svd_errors.csv", header=T)
+
+
+names(svd_errors)
+results<-aggregate(svd_errors$V3, list(svd_errors$V1), mean)
+
+results<-aggregate(svd_errors$V3, list(svd_errors$V1), mean)
+depth<-which.min(results$x)
+
+```
+Submission Code
+```{r}
+
+
+aux <- rawdata[,-c(1,30,numcol)]
+#aux[,1:11] <- scale(aux[,1:11])
+# aux <- scale(aux)
+# range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+# aux[,1:11]<- apply(aux[,1:11],2,range01)
+
+#out<-princomp(aux[,1:ncol(aux)])
+# PCAFrame <- as.data.frame(cbind(out$scores, Cov_Type=rawdata[,numcol]))
+# PCAFrame[,ncol(PCAFrame)] <- factor(PCAFrame[,ncol(PCAFrame)])
+
+
+  us <- as.matrix(out$u[, 1:depth])
+  vs <- as.matrix(out$v[, 1:depth])
+  ds <- as.matrix(diag(out$d)[1:depth, 1:depth])
+  Xreduced <- us %*% ds
+  SVDFrame <- as.data.frame(cbind(Xreduced, Cov_Type=rawdata[,numcol]))
+  SVDFrame[,ncol(SVDFrame)] <- factor(SVDFrame[,ncol(SVDFrame)])
+
+Xtrain <- training[, -c(traincol-1, traincol)]
+
+Ytrain <- training[,  (traincol-1)]
+
+
+t.aux <- test[,-c(1,30)]
+t.out<-svd(t.aux[,1:ncol(t.aux)])
+
+t.us <- as.matrix(t.out$u[, 1:depth])
+t.vs <- as.matrix(t.out$v[, 1:depth])
+t.ds <- as.matrix(diag(t.out$d)[1:depth, 1:depth])
+t.Xreduced <- t.us %*% t.ds
+t.SVDFrame <- as.data.frame(cbind(t.Xreduced))
+t.SVDFrame[,ncol(t.SVDFrame)] <- factor(t.SVDFrame[,ncol(t.SVDFrame)])
+
+test2<-t.SVDFrame
+
+
+Xtrain <- training[ -c(depth)]
+
+Ytrain <- factor(training[c(depth)][,1])
+
+testPredictions <- knn(train=Xtrain, test=test2, cl=Ytrain, k=1)
+
+length(Xtrain)
+length(test2)
+length(Ytrain)
+
+names(Xtrain)
+names(test2)
