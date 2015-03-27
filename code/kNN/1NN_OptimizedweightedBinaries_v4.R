@@ -1,11 +1,12 @@
+#Load required packages
 if (!require("foreach")) install.packages("foreach")
 if (!require("doSNOW")) install.packages("doSNOW")
-library(class)#install.packages("class")
-#Load data
-rawdata <- read.csv("../data/Kaggle_Covertype_training.csv")
-rawTestdata <- read.csv("../data/Kaggle_Covertype_test.csv")
+if (!require("class")) install.packages("class")
+
+#Load training and test sets
+rawdata <- read.csv("../data/Kaggle_Covertype_training.csv") #Training
+rawTestdata <- read.csv("../data/Kaggle_Covertype_test.csv") #Test
 numcol <- ncol(rawdata)
-numrow <- nrow(rawdata)
 rawdata[,numcol] <- factor(rawdata[,numcol]) #Classes as factors
 
 set.seed(10)
