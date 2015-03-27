@@ -73,4 +73,4 @@ testPredictions <- knn(train=Xtrain,
 #Save the predicted classes in the Kaggle format
 prediction<-data.frame(rawTestdata[,1],testPredictions)
 names(prediction) <- c("id", "Cover_Type")
-write.csv(prediction, file = "1NN_PredictionWeight.csv", row.names=FALSE)
+write.csv(prediction, file = "1NN_PredictionWeight_Revision.csv", row.names=FALSE)
