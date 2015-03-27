@@ -33,3 +33,23 @@ ggplot(data = errDF, aes(x = C)) +
   ylab("Error Rate") +
   theme_bw(base_size = 14, base_family = "Helvetica")+
   ggtitle("C parameter vs errors")
+
+
+## Lets make some plots off errors in the one-against all 
+modelNames <- c("Model 1", "Model 2", "Model 3", "Model 4", "Model 5", "Model 6", "Model 7")
+frame1vsAll <- data.frame(errorList2, modelNames)
+frame1_1vsAll <- data.frame(errorList3, modelNames)
+
+ggplot(data=frame1vsAll, aes(x = modelNames, y=errorList2)) + 
+  geom_point() +
+  xlab("Model") +
+  ylab("Error Rate") +
+  theme_bw(base_size = 14, base_family = "Helvetica")+
+  ggtitle("Error rates - 1 vs all (scaled)")
+
+ggplot(data=frame1_1vsAll, aes(x = modelNames, y=errorList3)) + 
+  geom_point() +
+  xlab("Model") +
+  ylab("Error Rate") +
+  theme_bw(base_size = 14, base_family = "Helvetica")+
+  ggtitle("Error rates - 1 vs all, (not scaled)")

@@ -1,4 +1,4 @@
-# Estimates using all data
+# SVM training using all data
 
 dataFull <- read.table('Kaggle_Covertype_training.csv', header=TRUE, sep=",")
 testD <- read.table('Kaggle_Covertype_test.csv', header=TRUE, sep=",")
