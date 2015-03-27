@@ -326,7 +326,9 @@ In order to improve the accuracy we realized that the wild areas and soil types 
 
 To solve this issue we came back to the visual inspection of the data. In the calculation of the distance we want to keep the relevance of the continuous features since some of them are reasonably well separated (e.g. the elevation) and increase the relevance of the binary features. To do that we multiplyed the binary features by the same weight while keeping the continuous variables with the default scale. The optimal parameters we got were $weight=91$ and $k=1$. The figure below shows the optimization of the weights for $k=1$.
 
+
 ```{r, echo=FALSE, fig.height=4, fig.width=4, fig.align='center'}
+
 kNN_OptimalWeight <- read.csv("1NN_OptimalWeight.csv")
 names(kNN_OptimalWeight) <- c("Misclass", "Weight")
 ggplot(data=kNN_OptimalWeight, 
