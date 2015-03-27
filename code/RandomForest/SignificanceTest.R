@@ -86,6 +86,69 @@ hor_dist_road 6.436267e+02
 hor_dist_fire 6.748079e+02
 elevation     3.355948e+03
 
+#Binary scaled
+mtry <- 4
+ntree <- 10
+features[,11:ncol(features)] <- features[,11:ncol(features)]*91
+RFout <- randomForest(features,
+                      labels,
+                      mtry=mtry,
+                      ntree=ntree)
+t(t(RFout$importance[order(RFout$importance[,1]),]))
+soil_type_15  0.000000e+00
+soil_type_7   1.600640e-04
+soil_type_36  2.877192e-01
+soil_type_25  6.075966e-01
+soil_type_8   6.491972e-01
+soil_type_9   1.919324e+00
+soil_type_28  3.698156e+00
+soil_type_18  4.709490e+00
+soil_type_14  5.112678e+00
+soil_type_16  9.615698e+00
+soil_type_27  1.067311e+01
+soil_type_5   1.314446e+01
+soil_type_34  1.341883e+01
+soil_type_21  1.352437e+01
+soil_type_20  1.500711e+01
+soil_type_37  1.646431e+01
+soil_type_26  1.738619e+01
+soil_type_19  2.179888e+01
+soil_type_1   3.600462e+01
+soil_type_6   3.830098e+01
+soil_type_31  4.168646e+01
+soil_type_35  4.551239e+01
+soil_type_17  4.822774e+01
+soil_type_33  5.301697e+01
+soil_type_30  5.328539e+01
+soil_type_3   5.555866e+01
+soil_type_24  6.368560e+01
+soil_type_32  7.419904e+01
+soil_type_11  8.259828e+01
+soil_type_40  8.728049e+01
+soil_type_29  9.134833e+01
+soil_type_13  1.123454e+02
+wild_area_2   1.348498e+02
+wild_area_3   1.509012e+02
+soil_type_2   1.889573e+02
+wild_area_1   1.998537e+02
+soil_type_38  2.086006e+02
+hill_3pm      2.094489e+02
+soil_type_12  2.166219e+02
+soil_type_23  2.176500e+02
+hill_9am      2.357479e+02
+soil_type_4   2.429817e+02
+hill_noon     2.678137e+02
+slope         2.722796e+02
+aspect        2.798883e+02
+soil_type_10  2.851876e+02
+soil_type_39  3.042171e+02
+hor_dist_hyd  3.042999e+02
+ver_dist_hyd  3.049985e+02
+soil_type_22  4.267023e+02
+wild_area_4   6.116824e+02
+hor_dist_fire 6.303030e+02
+hor_dist_road 6.838289e+02
+elevation     4.214971e+03
 
 mtry <- 20
 ntree <- 10
