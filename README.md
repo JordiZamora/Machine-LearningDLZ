@@ -1,6 +1,6 @@
 This documents comments the structure of Machine Slave's 
-GitHub folder and file structure. It should explain what bits of code
-need to be run in what order to reproduce our results. 
+GitHub folder and file structure. It explains what bits of code
+need to be run in what order to reproduce our results.
 
 # Folders #
 
