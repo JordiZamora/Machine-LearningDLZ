@@ -1,6 +1,6 @@
 ---
-title: 'Machine Learning: Kaggle competition on Prediction of a forest covertype'
-author: "Samantha Dalton, Yevgen Levin, and Jordi Zamora Munt"
+title: 'Machine Learning: Kaggle competition on Prediction of forest covertypes'
+author: "Samantha Dalton, Yevgeniy Levin, and Jordi Zamora Munt"
 date: "26/03/2015"
 output: pdf_document
 ---
@@ -55,7 +55,7 @@ The table shows that covertypes 1 and 2 are much more prevalent than other types
 
 Another way to understand the data before modeling it is to do some simple visualization. To view variation among covertypes across the continuous variables in the data we created density plots of these variables colored by covertype.
 
-```{r, echo=FALSE, fig.height=20, fig.width=15, message=FALSE}
+```{r, echo=FALSE, fig.height=13, fig.width=12, message=FALSE}
 ### Plot the density distribution of the continuous variables 
 plotList <- list()
 
@@ -155,7 +155,7 @@ myPlotList <- plotList
 multiplot(plotlist = myPlotList, layout = layout)
 ```
 
-The features that seem to capture display the most variation among covertypes seems to be captured by elevation and aspect. The rest of the features show a strong overlaping of the covertypes.
+The features that seem to display the most variation among covertypes seems to be captured by elevation and aspect. The rest of the features show a strong overlaping of the covertypes.
 
 For the binary features, we show a table that summarizes the 4 wild areas and the 40 soil types.
 
@@ -222,12 +222,11 @@ The second approach we attempted for classification was Support Vector Machines.
 
 
 
-The final approach we tried and we used in our final submission (with a  more sophisticated implementation using weighted binary feature) was the k-Nearest Neighbors algorithm. kNN is a simple algorithm that calculates distance from a point to its k nearest neighbors.  It assigns the point to the same class as the majority class of its k nearest neighbors.   The class package in R only allows for distance of features to be measured using Euclidian distance, which can be a limitation.
+The final approach we tried and we used in our final submission (with a  more sophisticated implementation using weighted binary feature) was the k-Nearest Neighbors algorithm. kNN is a simple algorithm that calculates distance from a point to its k nearest neighbors. It assigns the point to the same class as the majority class of its k nearest neighbors. The function we used is the `knn` from the class package only allows for distance of features to be measured using Euclidian distance, which can be a limitation.
 
 **randomForest**
 
-Raw random forest:
-The best results using random forest were obtained by using all the features as provided in the original data. Using the function `tuneRF` we were able to do a coarse grain selection of the number of features randomly chosen on each iteration of the method (*wtry* parameter). The optimal *mtry* was around 40 that is far from the *mtry=7*, that is the default value, due to the sparsity of the binary data. In a second step we perform a more systematic optimization around this value. In this process we cross-validated the accuracy with 8 buckets out-of-sample runing the code in AWS with 8 cores. The results are shown in the figure below.
+The best results using random forest were obtained by using all the features as provided in the original data. Using the function `tuneRF` we were able to do a coarse grain selection of the number of features randomly chosen on each iteration of the method (that number is controlled by the *wtry* parameter). The optimal *mtry* was around 40 that is far from the *mtry=7*, the default value, due to the sparsity of the binary data. In a second step we performed a more systematic optimization around this value. In this process we cross-validated the accuracy with 8 buckets runing the code in AWS with 8 cores. The results are shown in the figure below.
 
 
 ```{r, warning=FALSE, echo=FALSE}
@@ -257,13 +256,12 @@ Method & Preprocessing & Accuracy(\%) & mtry & ntree & Other Params\\ \hline
 Random Forest & raw data &  89.47 & 39 & 1000 & \\
 Random Forest & PCA without scaling & 88.14 & 12 & 50 & depth=all\\
 Random Forest & PCA with scaling & 87.69 & 34 & 50 & depth=all\\
-Random Forest & SVD without scaling & 89.46 & 37 & 124 & depth=6\\ \hline
+Random Forest & SVD without scaling & 89.46 & 6 & 124 & depth=6\\ \hline
 \end{tabular}
 
 There were two reason to try SVD and PCA in the preprocessing of the data. The first one was to project the data in a more suitable base such that the random forest would require less trees to classify the data. The second was to get rid of unnecessary or redundant features. The depth of the dimension reduction is given by the *depth* parameter. For PCA the best results were obtained by including all the features while for SVD we observed that the optimal depth was for the first 6 components, reducing  the computation time significantly. Those results are somehow reasonable since the random sample of features in the random forests are thought to reduce the effect of noisy features. In a last trial, not reported, we used the relative importance of the features from the output of the randomForest method to get rid of the less important features. Unfortunately, dimension reduction returned reduced accuracy in crossvalidation.
 
 **Support Vector Machines**
-
 
 We first tried using SVMs to classify one group against all others, but this method did not perform nearly as well as the kNN and randomForest methods. Given the enormous amount of computing time SVMs require, we explored other SVM models and packages in R and came across specifications that are adaptable to multiclass problems.
 
@@ -274,21 +272,24 @@ All of the types of SVM models considered were run in two different versions, co
 One-against-all SVM
 Initial set of models tested considered was the one against all SVM classification for each class. So given 7 classes, 7 different model were run. The performance of these is evaluated using both in-sample validation error and cross validation error.  The results are presented graphically below (for both scaled and unscaled features). Error measures were incredibly high and thus these models were discarded instantly.
 
+![1 vs All](1vsAll_yev.png)
 
 Multi-class SVM
 Since this is a multiclass classification problem, we decided to try a classic approach called the 'one-against-one' method where we train k(k-1)/2 binary classifiers. Here, k represents the number of classes (7 in our case). The appropriate class is determined using a voting scheme.  Once again, the RBF kernel was used for training, as experimentation with other kernels yielded inferior error rates (scaling the continuous variables provided miniscule improvement for this method).  
 
-We found that increasing the regularization C parameter increased in-sample training accuracy significantly. The relationship of the C parameter and the error rates can be seen in the graph below. However, increasing the C parameter also greatly increases training time. This is because an increased C parameter assigns a higher penalty to misclassification and forces the SVM optimisation routine to search more look for a "harder" boundary. From the below graph we can see that marginal improvement from increasing C decreases greatly as C increases. We chose arbitrarily C=5000 as a reasonable parameter in accuracy/run time pay off. The final in sample misclassification error was 0.1072. The 10 fold cross validation however was much greater.
+We found that increasing the regularization C parameter increased in-sample training accuracy significantly. The relationship of the C parameter and the error rates can be seen in the graph below. However, increasing the C parameter also greatly increases training time. This is because an increased C parameter assigns a higher penalty to misclassification and forces the SVM optimisation routine to search more look for a "harder" boundary. From the below graph we can see that marginal improvement from increasing C decreases greatly as C increases. We chose arbitrarily C=5000 as a reasonable parameter in accuracy/run time pay off. The final in sample misclassification error was 0.1072. The 10 fold cross validation however was much greater, of the order of 0.22.
+
+![Errors vs C](errorVsC_yev.png)
 
 SVM models proved to be inefficient with regard to run time and accuracy when compared to other models we considered. Thus we discarded this class of models as suitable for the given problem. 
 
 
 **Nearest Neighbours**
 
-The nearest neighbor algorithm gave some promising results as a classifier.  We tried to optimize the k for the nearest neighbor algorithm on both the raw data and the data that centered and scaled the continuous features.  For both instances, the highest accuracy was found using k=1.  Suprisingly, scaling the continuous feautes to be much smaller and centered around 0 did not increased the predictability of this classifier. So we decided to use the raw data in future iterations of this algorithm.  Below is a chart displaying the accuracy of the kNN algorithms across k's for the scaled and unscaled data.
+Initial trials of a nearest neighbor algorithm gave some promising results as a classifier. We tried to optimize the k for the nearest neighbor algorithm on both the raw data and the data that centered and scaled the continuous features. For both instances, the highest accuracy was found using k=1. Suprisingly, scaling the continuous feautes to be much smaller and centered around 0 did not increased the predictability of this classifier. So we decided to use the raw data in future iterations of this algorithm.  Below is a chart displaying the accuracy of the kNN algorithms across k's for the scaled and unscaled data.
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=4, fig.width=5, fig.align='center'}
 knn_no_scale <- read.csv("knn_noscale_errors.csv", header=T)
 knn_no_scale1<-aggregate(knn_no_scale$error, list(knn_no_scale$k),mean)
 max<-c(rep(1,length(knn_no_scale1$x)))
@@ -303,9 +304,12 @@ knn_graph<-rbind(knn_no_scale2,knn_scaled_errors2)
 ggplot(data=knn_graph,aes(x=k,y=accuracy, color=group)) + geom_point() + ggtitle("kNN Accuracy")+ theme_bw() +scale_x_continuous(breaks=c(1,3,5,7,9)) + theme(legend.title=element_blank())
 
 ```
-Another technique we tried was using singular value decomposition (SVD) with the 1NN algorithm.  The SVD can be thought of as decomposing a matrix into a weighted, ordered sum of separable matrices.  The idea was that perhaps dimension reduction that focused on the most important orthogonal features would give us a better measure of distance between points.  While this method did perform well; it did not improve accuracy much more than 1NN. Below is a chart displaying the optimal number of SVD components to use with the 1NN algorithm.  The optimal number of components to use (the one with lowest error) was 16, but as you can see from the chart, accuracy does not increase much after including 10 components (which is still quite a large reduction in dimension).
 
-```{r}
+The figure shows that unscaled features gives an accuracy of 0.899 while the results for the continuos features standardized gave an accuracy of 0.852. 
+
+Another technique we tried was using singular value decomposition (SVD) with the 1NN algorithm. The SVD can be thought of as decomposing a matrix into a weighted, ordered sum of separable matrices. The idea was that perhaps dimension reduction that focused on the most important orthogonal features would give us a better measure of distance between points. While this method did perform well giving an optimal accuracy of 0.9; it did not significantly improve accuracy much more than 1NN. Below is a chart displaying the optimal number of SVD components to use with the 1NN algorithm. The optimal number of components to use (the one with lowest error) was 17, but as you can see from the chart, accuracy does not increase much after including 10 components (which is still quite a large reduction in dimension).
+
+```{r, echo=FALSE, fig.height=4, fig.width=4, fig.align='center'}
 
 knn_svd <- read.csv("knn_svd_errors.csv", header=T)
 knn_svd1<-aggregate(knn_svd$error, list(knn_svd$features),mean)
@@ -318,11 +322,11 @@ ggplot(data=knn_svd,aes(x=no_components,y=accuracy)) + geom_point() + ggtitle("S
 
 **Best Classifier: Nearest Neighbours with weighted binary data**
 
-In order to improve the accuracy we realized that the wild areas and soil types were underweighted in the calculation of the distance. This is because the scales of the features are substantially different. For example, the elevation ranges from 2000 to 6000 while the soil types and wild areas are binary, i. e. they can take values 0 or 1. The binary differences lead to an insignificant increase in the distance when kNN is comparing examples with and without a given binary feature. So the first thing we tryed is to scale the continuous variables. The results are .... (ADD DOCUMENTATION ON SCALED KNN)
+In order to improve the accuracy we realized that the wild areas and soil types were underweighted in the calculation of the distance. This is because the scales of the features are substantially different. For example, the elevation ranges from 2000 to 6000 while the soil types and wild areas are binary, i. e. they can take values 0 or 1. The binary differences lead to an insignificant increase in the distance when kNN is comparing examples with and without a given binary feature. As we showed before, the standardization of continuous variables didn't produce a good result, so a different approach was required.
 
 To solve this issue we came back to the visual inspection of the data. In the calculation of the distance we want to keep the relevance of the continuous features since some of them are reasonably well separated (e.g. the elevation) and increase the relevance of the binary features. To do that we multiplyed the binary features by the same weight while keeping the continuous variables with the default scale. The optimal parameters we got were $weight=91$ and $k=1$. The figure below shows the optimization of the weights for $k=1$.
 
-```{r}
+```{r, echo=FALSE, fig.height=4, fig.width=4, fig.align='center'}
 kNN_OptimalWeight <- read.csv("1NN_OptimalWeight.csv")
 names(kNN_OptimalWeight) <- c("Misclass", "Weight")
 ggplot(data=kNN_OptimalWeight, 
@@ -337,14 +341,14 @@ ggplot(data=kNN_OptimalWeight,
         legend.position="none")
 ```
 
-We also checked systematically that the best k was 1 for the different weights. The optimal results for other weighting and scaling strategies we checked are summarized in the following table
+We also checked systematically that the best k was 1 for the different weights. The optimal results for the kNN method with different scaling strategies we checked are summarized in the following table
 
 \begin{tabular}{|l|l||l|l||l|l|}\hline
-Method & Preprocessing & Accuracy(\%) & k & Weight & Other Params\\ \hline
-kNN & raw data &   & 1 & - & \\
-kNN & Scaled continuous &  & 1 & N(0,1) & \\
-kNN & Weighted binaries & 91.88 & 1 & 91 & \\
-kNN & SVD & & 1 &  & \\ \hline
+Method & Preprocessing & Accuracy(\%) & k & Scaling\\ \hline
+kNN & raw data & 89.9  & 1 & - \\
+kNN & Scaled continuous & 85.2 & 1 & Standardized \\
+kNN & Weighted binaries & 91.88 & 1 & 91 \\
+kNN & SVD & 90.0 & 1 & - \\ \hline
 \end{tabular}
 
 **Conclusions**
