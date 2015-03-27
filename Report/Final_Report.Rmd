@@ -213,13 +213,15 @@ We have done some data preprocessing using different approaches.
 \item Dimension reduction methods: Together with the previous scaling we used the R packages `princomp` for principal component analysis and `svd` for singular value decomposition. We wanted to apply the classification algorithms in a lower dimensional space and remove redundant factors.
 \end{itemize}
 
-We have focused our classification efforts on three classification methods: Random Forest, Nearest Neighbours, and Support vector machines.
+We have focused our classification efforts on three classification methods: Random Forest,  Support vector machines and k-Nearest Neighbours.
 
-Random Forest is a popular ensamble technique that relies on selecting random subsets of the features and random subsamples of the data to partition the features space with axis parallel cuts (trees). It generates a set of partitions each of which is limited during the division process and is labeled by majority vote among the data points that are in that partition. We used the `randomForest` package that implements Breiman's random forest algorithm (see http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm for further details). Because Random Forest is quite popular for classification problems, it seemed appropraite to pursue this method for this problem.
+This first method we tried for classification was Random Forest. This is a popular ensamble technique that relies on selecting random subsets of the features and random subsamples of the data to partition the features space with axis parallel cuts (trees). It generates a set of partitions each of which is limited during the division process and is labeled by majority vote among the data points that are in that partition. We used the `randomForest` package that implements Breiman's random forest algorithm (see http://www.stat.berkeley.edu/~breiman/RandomForests/cc_home.htm for further details). Because Random Forest is quite popular for classification problems, it seemed appropraite to pursue this method for this problem.
 
-We also tried to use Support Vector Machines for classification of this problem.. In a first stage we want to see if we can identify any one class easily by running the original binary classification problem for each class against the others. Subsequently, when these results turned out poorly, and in the process of exploring the various SVM models and packages in R, we came across specifications that are adaptable to multi-class problems.
 
-KNN
+The second approach we attempted for classification was Support Vector Machines. In a first stage we want to see if we can identify any one class easily by running the original binary classification problem for each class against the others. Subsequently, when these results turned out poorly, and in the process of exploring the various SVM models and packages in R, we came across specifications that are adaptable to multi-class problems.
+
+
+The final approach we tried and we used in our final submission (with a  more sophisticated implementation using weighted binary feature) was the k-Nearest Neighbors algorithm. kNN is a simple algorithm that calculates distance from a point to its k nearest neighbors.  It assigns the point to the same class as the majority class of its k nearest neighbors.   The class package in R only allows for distance of features to be measured using Euclidian distance, which can be a limitation.
 
 **
 
@@ -229,7 +231,7 @@ Raw random forest:
 The best results using random forest were obtained by using all the features as provided in the original data. Using the function `tuneRF` we were able to do a coarse grain selection of the number of features randomly chosen on each iteration of the method (*wtry* parameter). The optimal *mtry* was around 40 that is far from the *mtry=7*, that is the default value, due to the sparsity of the binary data. In a second step we perform a more systematic optimization around this value. In this process we cross-validated the accuracy with 8 buckets out-of-sample runing the code in AWS with 8 cores. The results are shown in the figure below.
 
 
-```{r, warning=FALSE}
+```{r, warning=FALSE, echo=FALSE}
 RFMisclassVsMtryVsNtreeA <- read.csv("Result_Xval_AllFeatures_Systematic.csv")
 RFMisclassVsMtryVsNtreeB <- read.csv("Result_Xval_AllFeatures_SystematicB.csv")
 RFMisclassVsMtryVsNtree <- rbind(RFMisclassVsMtryVsNtreeA,RFMisclassVsMtryVsNtreeB)
@@ -259,10 +261,43 @@ Random Forest & PCA with scaling & 87.69 & 34 & 50 & depth=all\\
 Random Forest & SVD without scaling & 89.46 & 37 & 124 & depth=6\\ \hline
 \end{tabular}
 
-There were two reason to try SVD and PCA in the preprocessing of the data. The first one was to project the data in a more suitable base such that the random forest would require less trees to classify the data. The second was to get rid of unnecessary or redundant features. The depth of the dimension reduction is given by the *depth* parameter. For PCA the best results were obtained by including all the features while for SVD we observed that the optimal depth was for the first 6 components, reducing a lot the computation time. Those results are somehow reasonable since the random sample of features in the random forests are though to reduce the effect of noisy features. In a last trial, not reported, we used the relative importance of the features from the output of the randomForest method to get rid of the less important features. Unfortunately, by doing this the reduction on the information of the examples returned lower accuracies.
+There were two reason to try SVD and PCA in the preprocessing of the data. The first one was to project the data in a more suitable base such that the random forest would require less trees to classify the data. The second was to get rid of unnecessary or redundant features. The depth of the dimension reduction is given by the *depth* parameter. For PCA the best results were obtained by including all the features while for SVD we observed that the optimal depth was for the first 6 components, reducing  the computation time significantly. Those results are somehow reasonable since the random sample of features in the random forests are thought to reduce the effect of noisy features. In a last trial, not reported, we used the relative importance of the features from the output of the randomForest method to get rid of the less important features. Unfortunately, dimension reduction returned reduced accuracy in crossvalidation.
+
+**Support Vector Machines**
+
+**Nearest Neighbours**
+
+The nearest neighbor algorithm gave some promising results as a classifier.  We tried to optimize the k for the nearest neighbor algorithm on both the raw data and the data that centered and scaled the continuous features.  For both instances, the highest accuracy was found using k=1.  Suprisingly, scaling the continuous feautes to be much smaller and centered around 0 did not increased the predictability of this classifier. So we decided to use the raw data in future iterations of this algorithm.  Below is a chart displaying the accuracy of the kNN algorithms across k's for the scaled and unscaled data.
 
 
-**Nearest Neighbours with weighted binary data**
+```{r, echo=FALSE}
+knn_no_scale <- read.csv("knn_noscale_errors.csv", header=T)
+knn_no_scale1<-aggregate(knn_no_scale$error, list(knn_no_scale$k),mean)
+max<-c(rep(1,length(knn_no_scale1$x)))
+knn_no_scale2<-data.frame(group="unscaled",k=knn_no_scale1$Group.1, accuracy=round(max-knn_no_scale1$x,3))
+
+knn_scaled_errors <- read.csv("knn_scaled_errors.csv", header=T)
+knn_scaled_errors1<-aggregate(knn_scaled_errors$error, list(knn_scaled_errors$k),mean)
+knn_scaled_errors2<-data.frame(group="scaled", k=knn_scaled_errors1$Group.1, accuracy=round(max-knn_scaled_errors1$x,3))
+
+knn_graph<-rbind(knn_no_scale2,knn_scaled_errors2)
+
+ggplot(data=knn_graph,aes(x=k,y=accuracy, color=group)) + geom_point() + ggtitle("kNN Accuracy")+ theme_bw() +scale_x_continuous(breaks=c(1,3,5,7,9)) + theme(legend.title=element_blank())
+
+```
+Another technique we tried was using singular value decomposition (SVD) with the 1NN algorithm.  The idea was that perhaps dimension reduction that focused on the most important orthogonal features would give us a better measure of distance between points.  While this method did perform well; it did not improve accuracy much more than 1NN. Below is a chart displaying the optimal number of SVD components to use with the 1NN algorithm.  The optimal number of components to use (the one with lowest error) was 16, but as you can see from the chart, accuracy does not increase much after including 10 components (which is still quite a large reduction in dimension).
+
+```{r}
+
+knn_svd <- read.csv("knn_svd_errors.csv", header=T)
+knn_svd1<-aggregate(knn_svd$error, list(knn_svd$features),mean)
+max<-c(rep(1,length(knn_svd1$x)))
+knn_svd<-data.frame(no_components=knn_svd1$Group.1, accuracy=round(max-knn_svd1$x,3))
+
+ggplot(data=knn_svd,aes(x=no_components,y=accuracy)) + geom_point() + ggtitle("SVD Feature Accuracy with 1Knn")+ theme_bw() + theme(legend.title=element_blank())
+```
+
+**Best Classifier: Nearest Neighbours with weighted binary data**
 
 In order to improve the accuracy we realized that the wild areas and soil types were underweighted in the calculation of the distance. This is because the scales of the features are substantially different. For example, the elevation ranges from 2000 to 6000 while the soil types and wild areas are binary, i. e. they can take values 0 or 1. The binary differences lead to an insignificant increase in the distance when kNN is comparing examples with and without a given binary feature. So the first thing we tryed is to scale the continuous variables. The results are .... (ADD DOCUMENTATION ON SCALED KNN)
 
@@ -295,6 +330,6 @@ kNN & SVD & & 1 &  & \\ \hline
 
 **Conclusions**
 
-We conclude that the best method we could find to classify the forest covertypes was the kNN with k=1 by defining the binary variables $\in \lbrace 0, 91 \rbrace$. That method leads to our best Kaggle submission with a $92.52$ of accuracy in the $10\%$ of the test set. Our approach relies on the fact that the binary variables are underepresented in the calculation of the euclidean distances used in kNN. Since the scaling of the continuous variables didn't give us good results we decided to scale all the binary variables with a fixed weight. This method gives the best compromise between the relevance of the continuous features and the binary features.
+We conclude that the best method we could find to classify the forest covertypes was the kNN with k=1 with a weight of 91 applied to the binary variables, so values were$\in \lbrace 0, 91 \rbrace$. This method is responsible for our best Kaggle submission: an accuracy rate of $92.52\%$  in the $10\%$ test set. Our approach relies on the fact that the binary variables are underweighted in the calculation of the euclidean distances used in kNN. Since the scaling of the continuous variables didn't give us improved results we decided to scale all the binary variables with a fixed weight. This method gives the best compromise between the relevance of the continuous features and the binary features.  It is possible with more time and exploration that weights could vary across for each individual binary feature, but this was not something we explored.
 
-Other methods were discarded in the process that performed slightly worst than that. Specially disapointing was the inclussion of the SVD and PCA as preprocessing. The bad results got whit this methods was probably due to the fact that they are suposed to minimize the dispersion of the data. That is quite different from the optimization of the misclassification error, so from this point of view it makes not much sense to try to apply this techniques in the way we did.
+We discarded many methods in our search for the optimal classifier; many performed only slightly worse than our final classifier.  The PCA preprocessing was the most disappointing; it probably underperformed because it is designed to reduce dimensionality and capture as much variance as possible in very few variables.  While this method did manage to do that, the dimensions that it excluded probably contained enough accuracy to provide one or two extra points of accuracy in other methods.  SVMs also seemed to underperform for our classification problem.  Not only was the accuracy below that of other classifiers, this paticular method is much more computationally expensive than simpler and better performing methods such as kNN.
