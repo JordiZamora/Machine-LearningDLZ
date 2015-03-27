@@ -15,48 +15,35 @@ numrow <- nrow(rawdata)
 
 featuresRaw <- rawdata[,-c(1,numcol)]
 featuresRaw <- featuresRaw[,-which(names(featuresRaw)=="soil_type_15")]
+featuresRaw <- featuresRaw[,-which(names(featuresRaw)=="soil_type_7")]
+featuresRaw <- featuresRaw[,-which(names(featuresRaw)=="soil_type_36")]
 labels <- factor(rawdata[,numcol])
 
-aux <- featuresRaw
-aux <- scale(featuresRaw)
-out<-princomp(aux)
-features <- out$scores
-
-t1 <- tuneRF(features,labels,mtryStart=30, ntreeTry=10, stepFactor=1.2, improve=0.01)
-# mtry = 30  OOB error = 17.17% 
+features <- featuresRaw
+t1 <- tuneRF(features,labels,mtryStart=20, ntreeTry=50, stepFactor=1.2, improve=0.01)
+# mtry = 20  OOB error = 11.35% 
 # Searching left ...
-# mtry = 25   OOB error = 17.08% 
-# 0.005401986 0.01 
+# mtry = 17   OOB error = 11.58% 
+# -0.02062401 0.01 
 # Searching right ...
-# mtry = 36 	OOB error = 16.98% 
-# 0.01116046 0.01 
-# mtry = 43 	OOB error = 16.8% 
-# 0.01044974 0.01 
-# mtry = 50 	OOB error = 16.94% 
-# -0.008260477 0.01 
-t1 <- tuneRF(features,labels,mtryStart=30, ntreeTry=10, stepFactor=1.2, improve=0.01)
-# mtry = 40  OOB error = 17.06% 
+# mtry = 24 	OOB error = 11.27% 
+# 0.006345849 0.01 
+t2 <- tuneRF(features,labels,mtryStart=39, ntreeTry=100, stepFactor=1.2, improve=0.01)
+# mtry = 39  OOB error = 10.45% 
 # Searching left ...
-# mtry = 34   OOB error = 17.06% 
-# 0.0001037287 0.01 
+# mtry = 33   OOB error = 10.36% 
+# 0.008993494 0.01 
 # Searching right ...
-# mtry = 48 	OOB error = 16.75% 
-# 0.01825001 0.01 
-# mtry = 50 	OOB error = 17.13% 
-# -0.02295389 0.01 
-t1 <- tuneRF(features,labels,mtryStart=12, ntreeTry=50, stepFactor=1.2, improve=0.01)
-# mtry = 12  OOB error = 12.24% 
+# mtry = 46 	OOB error = 10.42% 
+# 0.002870264 0.01 
+t3 <- tuneRF(features,labels,mtryStart=30, ntreeTry=100, stepFactor=1.2, improve=0.01)
+# mtry = 30  OOB error = 10.46% 
 # Searching left ...
-# mtry = 10   OOB error = 12.31% 
-# -0.006374632 0.01 
+# mtry = 25   OOB error = 10.57% 
+# -0.01090283 0.01 
 # Searching right ...
-# mtry = 14 	OOB error = 12.37% 
-# -0.01062439 0.01 
-t1 <- tuneRF(features,labels,mtryStart=40, ntreeTry=50, stepFactor=1.2, improve=0.01)
-# mtry = 40  OOB error = 12.44% 
-# Searching left ...
-# mtry = 34   OOB error = 12.31% 
-# 0.01092896 0.01 
+# mtry = 36 	OOB error = 10.42% 
+# 0.003251721 0.01 
 
 MError <- c()
 

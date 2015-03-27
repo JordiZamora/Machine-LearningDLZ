@@ -44,8 +44,27 @@ numrow2 <- nrow(dataset2)
 
 # Separate features and labels
 features <- dataset2[,-c(1,numcol2)]
-labels <- dataset2[,numcol2]
+labels <- factor(dataset2[,numcol2])
 ntrain <- length(labels)
+
+t1 <- tuneRF(features,labels,mtryStart=10, ntreeTry=50, stepFactor=1.2, improve=0.01)
+# mtry = 10  OOB error = 11.27% 
+# Searching left ...
+# mtry = 9   OOB error = 11.15% 
+# 0.01047399 0.01 
+# mtry = 8 	OOB error = 11.22% 
+# -0.006458558 0.01 
+# Searching right ...
+# mtry = 12 	OOB error = 11.27% 
+# -0.01058486 0.01 
+t1 <- tuneRF(features,labels,mtryStart=9, ntreeTry=100, stepFactor=1.5, improve=0.01)
+# mtry = 9  OOB error = 10.6% 
+# Searching left ...
+# mtry = 6   OOB error = 10.61% 
+# -0.001131862 0.01 
+# Searching right ...
+# mtry = 12 	OOB error = 10.88% 
+# -0.02641011 0.01
 
 # Parameters Optimization
 #MCiterList <- split(rep(round(MCiter/cores), cores), seq(1,cores))
