@@ -38,35 +38,36 @@ ks <- c(1,3, 5, 7,9)
 results<-data.frame(1,1,1)
 testError<-data.frame(1,1)
 
-for (cv in 1:10) {
-  
-  Xtrain <- training  %>% filter(bucket != cv) %>% select(-Cover_Type, -id, -bucket)
-  
-  
-  Ytrain <- training %>% filter(bucket != cv) %>% select(Cover_Type)
-  
-  # subsetting the test phase data
-  Xtest <- training %>% filter(bucket == cv) %>% select( -Cover_Type, -id, -bucket)
-  
-  Ytest <- training %>% filter(bucket == cv) %>% select( Cover_Type)
-  
-    for (k in 1:length(ks)) {
 
-  
-  # kNN results
-  info<-paste(as.character(cv),as.character(k))
-  testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
-  totalError <-  mean(testPredictions != Ytest$Cover_Type)
-  tp<- data.frame(testPredictions,Ytest$Cover_Type)
-  groupError<-data.frame(ddply(tp,~round(Ytest.Cover_Type),summarise,mean=mean(testPredictions != Ytest.Cover_Type)))
-  groupError<-rbind(c(cv,k),groupError)
-  results<-rbind(results,c(k=k,bucket=cv,error=totalError))
-  testError<-cbind(testError, groupError)
-  
-  }
+#cross validating classifier for optimal k
+for (cv in 1:10) {
+      
+      Xtrain <- training  %>% filter(bucket != cv) %>% select(-Cover_Type, -id, -bucket)
+      Ytrain <- training %>% filter(bucket != cv) %>% select(Cover_Type)
+      
+      # subsetting the test phase data
+      Xtest <- training %>% filter(bucket == cv) %>% select( -Cover_Type, -id, -bucket)
+      Ytest <- training %>% filter(bucket == cv) %>% select( Cover_Type)
+      
+      
+      #trying different ks
+        for (k in 1:length(ks)) {
+    
+            
+            # kNN results
+            info<-paste(as.character(cv),as.character(k))
+            testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
+            totalError <-  mean(testPredictions != Ytest$Cover_Type)
+            tp<- data.frame(testPredictions,Ytest$Cover_Type)
+            groupError<-data.frame(ddply(tp,~round(Ytest.Cover_Type),summarise,
+                                          mean=mean(testPredictions != Ytest.Cover_Type)))
+            groupError<-rbind(c(cv,k),groupError)
+            results<-rbind(results,c(k=ks[k],bucket=cv,error=totalError))
+            testError<-cbind(testError, groupError)
+         
+        }
 
 }
-
 
 
 write.csv(x = results, file = "data/knn_noscale_errors.csv", row.names = F)
@@ -77,16 +78,10 @@ write.csv(x = results, file = "data/knn_noscale_errors.csv", row.names = F)
 ```{r}
 training<-read.csv("data/Kaggle_Covertype_training.csv", header=T)
 
-training<- training %>% select( -soil_type_15)
-
-test<-test %>% select( -soil_type_15)
-
-
-
+  training<- training %>% select( -soil_type_15)
+  test<-test %>% select( -soil_type_15)
 
   Xtrain <- training  %>%  select(-Cover_Type, -id)
-  
-  
   Ytrain <- training %>%  select(Cover_Type)
   
   # subsetting the test phase data
@@ -103,6 +98,9 @@ write.csv(Predictions, file="data/knn_predictions.csv", row.names = FALSE)
 
 ```{r}
 #Try testing KNN leaving out soil type 18, 19, (20), 21, 25, (26), 27, 28, 34, (35), 37
+
+
+
 #Rescale continuous variables
 
 
@@ -121,32 +119,32 @@ results_scaled<-data.frame(1,1,1)
 testError_scaled<-data.frame(1,1)
 
 
+#cross validating classifier for optimal k
 for (cv in 1:10) {
-  
-  Xtrain <- training  %>% filter(bucket != cv) %>% select(-Cover_Type, -id, -bucket)
-  
-  
-  Ytrain <- training %>% filter(bucket != cv) %>% select(Cover_Type)
-  
-  # subsetting the test phase data
-  Xtest <- training %>% filter(bucket == cv) %>% select( -Cover_Type, -id, -bucket)
-  
-  Ytest <- training %>% filter(bucket == cv) %>% select( Cover_Type)
-  
-    for (k in 1:length(ks)) {
-
-  
-  # kNN results
-  info<-paste(as.character(cv),as.character(k))
-  testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
-  totalError <-  mean(testPredictions != Ytest$Cover_Type)
-  tp<- data.frame(testPredictions,Ytest$Cover_Type)
-  groupError<-data.frame(ddply(tp,~Ytest.Cover_Type,summarise,mean=mean(testPredictions != Ytest.Cover_Type)))
-  groupError<-rbind(c(cv,k),groupError)
-  results_scaled<-rbind(results_scaled,c(k=k,bucket=cv,totalError))
-  testError_scaled<-cbind(testError_scaled, groupError)
-  
-  }
+        
+        Xtrain <- training  %>% filter(bucket != cv) %>% select(-Cover_Type, -id, -bucket)
+        Ytrain <- training %>% filter(bucket != cv) %>% select(Cover_Type)
+        
+        # subsetting the test phase data
+        Xtest <- training %>% filter(bucket == cv) %>% select( -Cover_Type, -id, -bucket)
+        Ytest <- training %>% filter(bucket == cv) %>% select( Cover_Type)
+        
+        #trying different ks
+          for (k in 1:length(ks)) {
+      
+                  
+                  # kNN results
+                  info<-paste(as.character(cv),as.character(k))
+                  testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
+                  totalError <-  mean(testPredictions != Ytest$Cover_Type)
+                  tp<- data.frame(testPredictions,Ytest$Cover_Type)
+                  groupError<-data.frame(ddply(tp,~Ytest.Cover_Type,summarise,
+                                               mean=mean(testPredictions != Ytest.Cover_Type)))
+                  groupError<-rbind(c(cv,k),groupError)
+                  results_scaled<-rbind(results_scaled,c(k=ks[k],bucket=cv,totalError))
+                  testError_scaled<-cbind(testError_scaled, groupError)
+                  
+            }
 
 }
 
@@ -175,6 +173,7 @@ results_scaled01<-data.frame(1,1,1)
 testError_scaled01<-data.frame(1,1)
 
 
+#cross validating classifier for optimal k
 for (cv in 1:10) {
   
   Xtrain <- training  %>% filter(bucket != cv) %>% select(-Cover_Type, -id, -bucket)
@@ -187,20 +186,21 @@ for (cv in 1:10) {
   
   Ytest <- training %>% filter(bucket == cv) %>% select( Cover_Type)
   
-    for (k in 1:length(ks)) {
-
   
-  # kNN results
-  info<-paste(as.character(cv),as.character(k))
-  testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
-  totalError <-  mean(testPredictions != Ytest$Cover_Type)
-  tp<- data.frame(testPredictions,Ytest$Cover_Type)
-  groupError<-data.frame(ddply(tp,~Ytest.Cover_Type,summarise,mean=mean(testPredictions != Ytest.Cover_Type)))
-  groupError<-rbind(c(cv,k),groupError)
-  results_scaled01<-rbind(results_scaled,c(k=k,bucket=cv,totalError))
-  testError_scaled01<-cbind(testError_scaled, groupError)
-  
-  }
+  #trying different ks
+    for (k in 1:length(ks)) {      
+        # kNN results
+        info<-paste(as.character(cv),as.character(k))
+        testPredictions <- knn(train=Xtrain, test=Xtest, cl=Ytrain$Cover_Type, k=ks[k])
+        totalError <-  mean(testPredictions != Ytest$Cover_Type)
+        tp<- data.frame(testPredictions,Ytest$Cover_Type)
+        groupError<-data.frame(ddply(tp,~Ytest.Cover_Type,summarise,
+                                      mean=mean(testPredictions != Ytest.Cover_Type)))
+        groupError<-rbind(c(cv,k),groupError)
+        results_scaled01<-rbind(results_scaled,c(k=ks[k],bucket=cv,totalError))
+        testError_scaled01<-cbind(testError_scaled, groupError)
+        
+    }
 
 }
 
